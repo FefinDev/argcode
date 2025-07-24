@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ArgCode - Lenguaje estilo Gobstones</title>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
+
+  :root {
+    --bg-dark: #1e1e2f;
+    --fg-dark: #e0e0ff;
+    --bg-light: #f0f0f5;
+    --fg-light: #222;
+    --btn-bg: #3a86ff;
+    --btn-bg-hover: #265fca;
+    --console-bg-dark: #12121e;
+    --console-bg-light: #ddddee;
+    --error-color: #ff6b6b;
+  }
+
+  body.dark {
+    background: var(--bg-dark);
+    color: var(--fg-dark);
+  }
+  body.light {
+    background: var(--bg-light);
+    color: var(--fg-light);
+  }
+
+  body {
+    font-family: 'Fira Code', monospace;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  #header {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background: var(--btn-bg);
+    color: white;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  #header button, #header label {
+    background: var(--btn-bg);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 4px 6px #265fcaaa;
+    transition: background-color 0.2s;
+  }
+  #header button:hover {
+    background: var(--btn-bg-hover);
+  }
+  #header label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+  }
+  #header input[type=range] {
+    cursor: pointer;
+  }
+
+  #main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  #editor-container, #tablero-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    box-sizing: border-box;
+  }
+
+  /* Editor simple sin bugs */
+  #editor {
+    flex: 1;
+    border: 2px solid var(--btn-bg);
+    border-radius: 12px;
+    font-family: 'Fira Code', monospace;
+    font-size: 16px;
+    line-height: 1.4;
+    padding: 12px;
+    resize: none;
+    outline: none;
+    background: transparent;
+    color: inherit;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* Consola tipo terminal */
+  #consola {
+    margin-top: 12px;
+    background: var(--console-bg-dark);
+    color: var(--fg-dark);
+    border-radius: 10px;
+    padding: 12px;
+    font-family: 'Fira Code', monospace;
+    font-size: 15px;
+    height: 140px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    box-shadow: inset 0 0 10px #0008;
+  }
+  body.light #consola {
+    background: var(--console-bg-light);
+    color: var(--fg-light);
+  }
+
+  /* Tablero */
+  #tablero {
+    display: grid;
+    border-radius: 20px;
+    box-shadow: 0 0 30px var(--btn-bg);
+    user-select: none;
+    gap: 6px;
+    background: var(--bg-dark);
+    max-width: 90vw;
+    max-height: 90vh;
+    margin: auto;
+  }
+
+  .celda {
+    background: var(--fg-dark);
+    border-radius: 12px;
+    position: relative;
+    cursor: default;
+    border: 2px solid transparent;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .celda.cursor {
+    border-color: var(--btn-bg);
+    box-shadow: 0 0 12px 5px var(--btn-bg);
+    animation: pulsar 1.5s infinite ease-in-out;
+  }
+  @keyframes pulsar {
+    0%,100% { box-shadow: 0 0 12px 5px var(--btn-bg); }
+    50% { box-shadow: 0 0 22px 10px var(--btn-bg); }
+  }
+
+  .piedra {
+    width: 40%;
+    height: 40%;
+    border-radius: 50%;
+    position: absolute;
+    top: 30%;
+    left: 30%;
+    box-shadow: 0 0 5px #0008 inset;
+  }
+  .rojo { background-color: #ff5c5c; box-shadow: 0 0 10px #ff5c5caa, inset 0 0 10px #a00000; }
+  .azul { background-color: #5c9eff; box-shadow: 0 0 10px #5c9effaa, inset 0 0 10px #004a9a; }
+  .verde { background-color: #5cff7c; box-shadow: 0 0 10px #5cff7caa, inset 0 0 10px #00802a; }
+  .amarillo { background-color: #ffd85c; box-shadow: 0 0 10px #ffd85caa, inset 0 0 10px #b88600; }
+
+  /* Errores */
+  #errores {
+    color: var(--error-color);
+    font-weight: 700;
+    min-height: 1.5em;
+    margin-top: 8px;
+    user-select: none;
+    text-align: center;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    #main {
+      flex-direction: column;
+    }
+    #editor-container, #tablero-container {
+      flex: none;
+      height: 50vh;
+      padding: 6px;
+    }
+  }
+</style>
+</head>
+<body class="dark">
+
+<header id="header">
+  <button id="btnEjecutar" title="Ejecutar todo">▶ Ejecutar</button>
+  <button id="btnEjecutarPaso" title="Ejecutar paso a paso">⏭ Paso a paso</button>
+  <label for="velocidad">Velocidad
+    <input type="range" id="velocidad" min="100" max="2000" step="100" value="600" />
+  </label>
+  <button id="btnTableroMenos" title="Reducir tamaño tablero">➖ Tablero</button>
+  <button id="btnTableroMas" title="Aumentar tamaño tablero">➕ Tablero</button>
+  <button id="btnModo" title="Alternar modo claro/oscuro">Modo Claro</button>
+</header>
+
+<main id="main">
+  <section id="editor-container">
+    <textarea id="editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Escribe tu código aquí..."></textarea>
+    <div id="errores"></div>
+    <div id="consola"></div>
+  </section>
+
+  <section id="tablero-container">
+    <div id="tablero"></div>
+  </section>
+</main>
+
+<script>
+  let filas = 5;
+  let columnas = 5;
+  let tablero = [];
+  let cursor = {x:0, y:0};
+  const coloresValidos = ['rojo', 'azul', 'verde', 'amarillo'];
+  const direcciones = {
+    norte: {dx:0, dy:-1},
+    sur: {dx:0, dy:1},
+    este: {dx:1, dy:0},
+    oeste: {dx:-1, dy:0}
+  };
+  let variables = {};
+
+  let instruccionesEjecutar = [];
+  let indexEjecucion = 0;
+  let timer = null;
+
+  const editor = document.getElementById('editor');
+  const consola = document.getElementById('consola');
+  const errores = document.getElementById('errores');
+
+  function inicializarTablero(){
+    tablero = [];
+    for(let y=0; y<filas; y++){
+      let fila = [];
+      for(let x=0; x<columnas; x++){
+        fila.push([]);
+      }
+      tablero.push(fila);
+    }
+    cursor = {x:0, y:0};
+    variables = {};
+  }
+
+  function dibujarTablero(){
+    const cont = document.getElementById('tablero');
+    cont.innerHTML = '';
+    cont.style.gridTemplateColumns = `repeat(${columnas}, 1fr)`;
+    cont.style.gridTemplateRows = `repeat(${filas}, 1fr)`;
+    const tamCelda = Math.min(400 / filas, 400 / columnas);
+    cont.style.width = tamCelda * columnas + 'px';
+    cont.style.height = tamCelda * filas + 'px';
+
+    for(let y=0; y<filas; y++){
+      for(let x=0; x<columnas; x++){
+        const celda = document.createElement('div');
+        celda.className = 'celda';
+        celda.style.width = tamCelda + 'px';
+        celda.style.height = tamCelda + 'px';
+        if(cursor.x === x && cursor.y === y){
+          celda.classList.add('cursor');
+        }
+        tablero[y][x].forEach(color => {
+          const piedra = document.createElement('div');
+          piedra.className = 'piedra ' + color;
+          celda.appendChild(piedra);
+        });
+        cont.appendChild(celda);
+      }
+    }
+  }
+
+  function prepararEjecucion(){
+    let texto = editor.value.replace(/\r/g,'');
+    let lineas = texto.split('\n').map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('//'));
+    return lineas;
+  }
+
+  function ejecutarInstrucciones(lineas, desde=0, hasta=lineas.length){
+    for(let i=desde; i<hasta; i++){
+      let linea = lineas[i];
+
+      // Asignación variable
+      let mAsig = linea.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([a-zA-Z0-9_]+)$/);
+      if(mAsig){
+        const nombre = mAsig[1].toLowerCase();
+        const valorRaw = mAsig[2].toLowerCase();
+
+        if(coloresValidos.includes(valorRaw) || Object.keys(direcciones).includes(valorRaw) || !isNaN(parseInt(valorRaw))){
+          variables[nombre] = valorRaw;
+        } else {
+          throw new Error(`Valor inválido para variable '${nombre}' en línea ${i+1}: '${valorRaw}'`);
+        }
+        continue;
+      }
+
+      // poner(color)
+      let mPoner = linea.match(/^poner\s*\(\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\)$/i);
+      if(mPoner){
+        let arg = mPoner[1].toLowerCase();
+        if(variables.hasOwnProperty(arg)) arg = variables[arg];
+        if(!coloresValidos.includes(arg)) throw new Error(`Color inválido en línea ${i+1}: '${arg}'`);
+        poner(arg);
+        continue;
+      }
+
+      // sacar(color)
+      let mSacar = linea.match(/^sacar\s*\(\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\)$/i);
+      if(mSacar){
+        let arg = mSacar[1].toLowerCase();
+        if(variables.hasOwnProperty(arg)) arg = variables[arg];
+        if(!coloresValidos.includes(arg)) throw new Error(`Color inválido en línea ${i+1}: '${arg}'`);
+        sacar(arg);
+        continue;
+      }
+
+      // mover(direccion)
+      let mMover = linea.match(/^mover\s*\(\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\)$/i);
+      if(mMover){
+        let arg = mMover[1].toLowerCase();
+        if(variables.hasOwnProperty(arg)) arg = variables[arg];
+        if(!direcciones.hasOwnProperty(arg)) throw new Error(`Dirección inválida en línea ${i+1}: '${arg}'`);
+        mover(arg);
+        continue;
+      }
+
+      // escribir("texto")
+      let mEscribir = linea.match(/^escribir\s*\(\s*"(.*)"\s*\)$/i);
+      if(mEscribir){
+        let texto = mEscribir[1];
+        escribir(texto);
+        continue;
+      }
+
+      // repetir(n) {
+      if(linea.toLowerCase().startsWith('repetir')){
+        let mRep = linea.match(/^repetir\s*\(\s*([a-zA-Z0-9_]+)\s*\)\s*\{$/i);
+        if(!mRep) throw new Error(`Sintaxis repetir inválida en línea ${i+1}`);
+        let repNumRaw = mRep[1].toLowerCase();
+
+        let repNum;
+        if(variables.hasOwnProperty(repNumRaw)){
+          repNum = parseInt(variables[repNumRaw], 10);
+          if(isNaN(repNum) || repNum < 0) throw new Error(`Valor no válido para repetir en línea ${i+1}: '${variables[repNumRaw]}'`);
+        } else {
+          repNum = parseInt(repNumRaw, 10);
+          if(isNaN(repNum) || repNum < 0) throw new Error(`Valor no válido para repetir en línea ${i+1}: '${repNumRaw}'`);
+        }
+
+        // Buscar cierre de bloque }
+        let finIndex = -1;
+        let profundidad = 0;
+        for(let j=i+1; j<lineas.length; j++){
+          if(lineas[j].includes('{')) profundidad++;
+          if(lineas[j].includes('}')){
+            if(profundidad === 0){
+              finIndex = j;
+              break;
+            } else {
+              profundidad--;
+            }
+          }
+        }
+        if(finIndex === -1) throw new Error(`No se encontró '}' para repetir en línea ${i+1}`);
+
+        for(let r=0; r<repNum; r++){
+          ejecutarInstrucciones(lineas, i+1, finIndex);
+        }
+        i = finIndex;
+        continue;
+      }
+
+      // cierre }
+      if(linea.trim() === '}'){
+        return;
+      }
+
+      throw new Error(`Instrucción desconocida en línea ${i+1}: '${linea}'`);
+    }
+  }
+
+  function poner(color){
+    tablero[cursor.y][cursor.x].push(color);
+  }
+  function sacar(color){
+    const celda = tablero[cursor.y][cursor.x];
+    const idx = celda.indexOf(color);
+    if(idx !== -1){
+      celda.splice(idx,1);
+    } else {
+      throw new Error(`No hay piedra ${color} en la celda actual para sacar`);
+    }
+  }
+  function mover(dir){
+    const mov = direcciones[dir];
+    const nx = cursor.x + mov.dx;
+    const ny = cursor.y + mov.dy;
+    if(nx < 0 || nx >= columnas || ny < 0 || ny >= filas){
+      throw new Error(`Movimiento fuera del tablero hacia ${dir}`);
+    }
+    cursor.x = nx;
+    cursor.y = ny;
+  }
+
+  function escribir(texto){
+    consola.textContent += texto + '\n';
+    consola.scrollTop = consola.scrollHeight;
+  }
+
+  function ejecutarTodo(){
+    clearInterval(timer);
+    indexEjecucion = 0;
+    errores.textContent = '';
+    consola.textContent = '';
+    inicializarTablero();
+    dibujarTablero();
+
+    try {
+      instruccionesEjecutar = prepararEjecucion();
+      ejecutarInstrucciones(instruccionesEjecutar);
+      dibujarTablero();
+    } catch(e) {
+      errores.textContent = e.message;
+    }
+  }
+
+  function ejecutarPasoAPaso(){
+    clearInterval(timer);
+    indexEjecucion = 0;
+    errores.textContent = '';
+    consola.textContent = '';
+    inicializarTablero();
+    dibujarTablero();
+
+    try {
+      instruccionesEjecutar = prepararEjecucion();
+      ejecutarPaso();
+    } catch(e) {
+      errores.textContent = e.message;
+    }
+  }
+
+  function ejecutarPaso(){
+    if(indexEjecucion >= instruccionesEjecutar.length){
+      clearTimeout(timer);
+      return;
+    }
+    try {
+      ejecutarInstrucciones([instruccionesEjecutar[indexEjecucion]], 0, 1);
+      dibujarTablero();
+      indexEjecucion++;
+      const velocidad = parseInt(document.getElementById('velocidad').value);
+      timer = setTimeout(ejecutarPaso, velocidad);
+    } catch(e) {
+      errores.textContent = e.message;
+      clearTimeout(timer);
+    }
+  }
+
+  function tableroMas(){
+    if(filas < 10 && columnas < 10){
+      filas++;
+      columnas++;
+      inicializarTablero();
+      dibujarTablero();
+    }
+  }
+  function tableroMenos(){
+    if(filas > 5 && columnas > 5){
+      filas--;
+      columnas--;
+      inicializarTablero();
+      dibujarTablero();
+    }
+  }
+
+  function toggleModo(){
+    const body = document.body;
+    const btn = document.getElementById('btnModo');
+    if(body.classList.contains('dark')){
+      body.classList.remove('dark');
+      body.classList.add('light');
+      btn.textContent = 'Modo Oscuro';
+    } else {
+      body.classList.remove('light');
+      body.classList.add('dark');
+      btn.textContent = 'Modo Claro';
+    }
+  }
+
+  document.getElementById('btnEjecutar').addEventListener('click', ejecutarTodo);
+  document.getElementById('btnEjecutarPaso').addEventListener('click', ejecutarPasoAPaso);
+  document.getElementById('btnTableroMas').addEventListener('click', tableroMas);
+  document.getElementById('btnTableroMenos').addEventListener('click', tableroMenos);
+  document.getElementById('btnModo').addEventListener('click', toggleModo);
+
+  window.onload = () => {
+    inicializarTablero();
+    dibujarTablero();
+    editor.value = 
+`// Ejemplo ArgCode
+poner(rojo)
+mover(este)
+poner(azul)
+escribir("¡Hola desde ArgCode!")
+`;
+  };
+</script>
+</body>
+</html>
