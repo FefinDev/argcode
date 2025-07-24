@@ -1,1 +1,9 @@
-
+{
+  "nombre": "2BolasRojas",
+  "descripcion": "Coloca dos bolas rojas y se mueve al este.",
+  "codigo": [
+    "poner(Rojo)",
+    "mover(Este)",
+    "poner(Rojo)"
+  ]
+}
