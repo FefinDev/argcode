@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Documentación - ArgCode</title>
+  <style>
+    :root {
+      --fondo-claro: #f5f5f5;
+      --texto-claro: #111;
+      --fondo-oscuro: #111;
+      --texto-oscuro: #f5f5f5;
+      --acento: #005eff;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--fondo-claro);
+      color: var(--texto-claro);
+      transition: background-color 0.3s, color 0.3s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 0.2rem;
+    }
+
+    p.slogan {
+      font-size: 1.2rem;
+      color: var(--acento);
+    }
+
+    .contenedor {
+      width: 90%;
+      max-width: 800px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      border-left: 5px solid var(--acento);
+      padding-left: 10px;
+      margin-top: 2rem;
+    }
+
+    pre {
+      background: #e0e0e0;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+
+    button {
+      margin-top: 2rem;
+      background-color: var(--acento);
+      color: white;
+      padding: 0.7rem 1.5rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .modo-oscuro {
+      background-color: var(--fondo-oscuro);
+      color: var(--texto-oscuro);
+    }
+
+    .modo-oscuro .contenedor {
+      background: rgba(20, 20, 20, 0.95);
+    }
+
+    .modo-oscuro pre {
+      background: #333;
+      color: #eee;
+    }
+
+    nav {
+      margin-bottom: 2rem;
+    }
+
+    nav a {
+      margin: 0 1rem;
+      text-decoration: none;
+      color: var(--acento);
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📘 Documentación ArgCode</h1>
+    <p class="slogan">El lenguaje de programación 100% argentino</p>
+    <nav>
+      <a href="index.html">🏠 Inicio</a>
+      <a href="code.html">💻 Probar ArgCode</a>
+    </nav>
+    <button onclick="alternarModo()">🌗</button>
+  </header>
+
+  <div class="contenedor">
+    <h2>📌 Sintaxis Básica</h2>
+    <p>ArgCode es un lenguaje simple y visual para aprender a programar con orgullo argentino. Estas son sus instrucciones básicas:</p>
+
+    <pre>
+poner(color)         // Coloca un color en la celda actual
+mover(direccion)     // Mueve el cursor en una dirección (norte, sur, este, oeste)
+repetir(veces) {
+  ...instrucciones...
+}
+
+ejemplo:
+poner(Azul)
+mover(norte)
+repetir(3) {
+  poner(Rojo)
+  mover(este)
+}
+    </pre>
+
+    <h2>🧠 Variables</h2>
+    <p>Puedes guardar colores o direcciones en variables:</p>
+    <pre>
+c = Azul
+d = norte
+poner(c)
+mover(d)
+    </pre>
+
+    <h2>🖨️ Consola</h2>
+    <p>Podés usar <code>escribir("texto")</code> para mostrar mensajes en la consola inferior del editor:</p>
+    <pre>
+escribir("Hola, soy Fefin")
+    </pre>
+
+    <h2>🎯 Objetivo</h2>
+    <p>El objetivo es aprender lógica de programación en un entorno amigable y divertido. ¡Jugá con los colores y movimientos!</p>
+  </div>
+
+  <script>
+    function alternarModo() {
+      document.body.classList.toggle("modo-oscuro");
+    }
+  </script>
+</body>
+</html>
